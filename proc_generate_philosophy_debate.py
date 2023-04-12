@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-
 # Command-line flags that can override the values in the config file.
 FLAGS = flags.FLAGS
 flags.DEFINE_string('config', 'FredRalph_p1.toml', 'Path to the TOML config')
@@ -32,18 +31,19 @@ def load_toml(fname):
     return cfg
 
 
+# Determine who the next speaker is based on the prompt.
+# To do this, we determine the last mention of each speaker in the prompt and return the one that was mentioned furthest from the end.
 def get_next_speaker(prompt, speakers=['Frederich', 'Ralph']):
-    sp_ord = {s:0 for s in speakers}
-    tokens = TreebankWordTokenizer().tokenize(prompt)
-    
-    for ti in range(0,len(tokens)-1):
-        for s in speakers:
-            if tokens[ti] == s and tokens[ti+1] == ':':
-                sp_ord[s] = ti
-    
-    next_speaker = min(sp_ord, key=sp_ord.get)
-            
-    return next_speaker
+    mentions = {s: prompt.rfind(f'{s}:') for s in speakers}    
+    return min(mentions, key=mentions.get)
+
+# Get the last utterance of the debate.
+# To do this, we determine the last mention of each speaker in the output and find the one that was mentioned last. This marks the start
+# of the last utterance.
+def get_last_utterance(output, speakers=['Frederich', 'Ralph']):
+    mentions = {s: output.rfind(f'{s}:') for s in speakers}
+    last_speaker_idx = max(mentions.values())
+    return output[last_speaker_idx:]
 
 
 def get_new_prompt(output, n_keep=150, speakers=['Frederich','Ralph']):
@@ -96,17 +96,17 @@ def get_new_prompt(output, n_keep=150, speakers=['Frederich','Ralph']):
     return new_prompt
 
 
-def main(argv):
-        
+def main(argv):        
     cfg = load_toml(FLAGS.config)
-
     now = dt.datetime.now().replace(microsecond=0)
     formatted_date = now.strftime("%d%m%Y_%H%M%S")
     
-    # Override the model path if specified.
+    ################
+    ## CONFIGURATION
+    ################
     cfg['model_params']['ggml_model'] = FLAGS['ggml-model'].value or cfg['model_params']['ggml_model']
     rounds = FLAGS['rounds'].value or cfg['debate_params']['rounds']
-    fname_out = FLAGS['output'].value or f'{FLAGS.config.value.strip(".toml")}_{formatted_date}.txt'
+    fname_out = FLAGS['output'].value or f'{FLAGS["config"].value.strip(".toml")}_{formatted_date}.txt'
 
     start_prompt = cfg['debate_params']['initial_prompt']
     speaker1 = cfg['debate_params']['speaker1_fullname'].split(' ')[0]
@@ -116,27 +116,30 @@ def main(argv):
     logger.info('Rounds: %d', rounds)
     logger.info('Output file: %s', fname_out)
 
+
+    # Load the model.
     model = Model(**cfg['model_params'])
 
-    all_outputs = []
-    all_prompts = []
+    # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
+    all_outputs = [start_prompt]
 
-    prompt = start_prompt
+    # Take the initial prompt and prepare it for the first round.
+    prompt = get_new_prompt(start_prompt)    
 
+    # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
+    # rotate after each round.
     for n in tqdm(range(0,rounds)):
+        print('========= rolling prompt ==========')
+        print(prompt)
+        print('========= /rolling prompt ==========')
 
         output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':os.cpu_count()}})
         prompt = get_new_prompt(output, n_keep=int(cfg['model_params']['n_ctx']/2),speakers=[speaker1,speaker2])
-
-        all_outputs.append(output)
-        all_prompts.append(prompt)
-
-        print(output)
-        print('')
-        print('###########################################')
+        last_utterance = get_last_utterance(output, speakers=[speaker1,speaker2])
+        all_outputs.append(last_utterance)
 
     with open(fname_out, 'w') as f:
-        f.write('\n'.join(all_outputs))
+        f.write('\n--------------------\n'.join(all_outputs))
     
         
 if __name__ == "__main__":
