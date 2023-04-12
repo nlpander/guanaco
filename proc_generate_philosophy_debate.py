@@ -3,10 +3,25 @@ from tqdm import tqdm
 import datetime as dt
 import pickle as pkl
 
+from absl import flags, app
+import logging
+
 from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 import re
 import os, sys
 import toml
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+
+# Command-line flags that can override the values in the config file.
+FLAGS = flags.FLAGS
+flags.DEFINE_string('config', 'FredRalph_p1.toml', 'Path to the TOML config')
+flags.DEFINE_string('ggml-model', None, 'Path to the GGML model')
+flags.DEFINE_integer('rounds', None, 'Number of rounds to execute')
+flags.DEFINE_string('output', None, 'Output file')
 
 
 def load_toml(fname):
@@ -82,17 +97,26 @@ def get_new_prompt(output, n_keep=150, speakers=['Frederich','Ralph']):
 
 
 def main(argv):
-    
-    fname = argv[1]
-    
-    cfg = load_toml(fname)
+        
+    cfg = load_toml(FLAGS.config)
 
-    model = Model(**cfg['model_params'])
+    now = dt.datetime.now().replace(microsecond=0)
+    formatted_date = now.strftime("%d%m%Y_%H%M%S")
+    
+    # Override the model path if specified.
+    cfg['model_params']['ggml_model'] = FLAGS['ggml-model'].value or cfg['model_params']['ggml_model']
+    rounds = FLAGS['rounds'].value or cfg['debate_params']['rounds']
+    fname_out = FLAGS['output'].value or f'{FLAGS.config.value.strip(".toml")}_{formatted_date}.txt'
 
     start_prompt = cfg['debate_params']['initial_prompt']
-    rounds = cfg['debate_params']['rounds']
     speaker1 = cfg['debate_params']['speaker1_fullname'].split(' ')[0]
     speaker2 = cfg['debate_params']['speaker2_fullname'].split(' ')[0]
+
+    logger.info('Using model: %s', cfg['model_params']['ggml_model'])
+    logger.info('Rounds: %d', rounds)
+    logger.info('Output file: %s', fname_out)
+
+    model = Model(**cfg['model_params'])
 
     all_outputs = []
     all_prompts = []
@@ -111,14 +135,9 @@ def main(argv):
         print('')
         print('###########################################')
 
-    now = dt.datetime.now().replace(microsecond=0)
-    formatted_date = now.strftime("%d%m%Y_%H%M%S")
-
-    fname_out = fname.strip('.toml') + '_' + formatted_date + '.pkl'
-
-    with open(fname_out, 'wb') as f:
-        pkl.dump(all_outputs, f)    
+    with open(fname_out, 'w') as f:
+        f.write('\n'.join(all_outputs))
     
         
 if __name__ == "__main__":
-    main(sys.argv)
+    app.run(main)

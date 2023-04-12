@@ -1,4 +1,12 @@
 [[package]]
+name = "absl-py"
+version = "1.4.0"
+description = "Abseil Python Common Libraries, see https://github.com/abseil/abseil-py."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "altair"
 version = "4.2.2"
 description = "Altair: A declarative statistical visualization library for Python."
@@ -843,9 +851,10 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "81bcd7b72730432908ee641044ed63fc28a0c3b7338e6cca1a8f234893963927"
+content-hash = "6d9db1fd5b17a2ea7f9550abbe22b9003ed082edeb340d41e89e4d373b8d8769"
 
 [metadata.files]
+absl-py = []
 altair = []
 attrs = []
 blinker = []
