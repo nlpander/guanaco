@@ -1,0 +1,17 @@
+[debate_params]
+speaker1_fullname = "Frederich Nietzsche"
+speaker2_fullname = "Ralph Waldo Emerson"
+initial_prompt = "You are the philosopher Frederich Nietzsche and you are having a conversation with your friend and fellow philosopher Ralph Waldo Emerson. You emphatically put forward your thoughts in each exchange, sometimes giving an original thought, sometimes challenging your friend's previous utterance.\n\nFrederich: God is dead and we have murdered him, what is left is gaping hole into which nihilism will find cover.\nRalph: Indeed, for great is paint and God is the painter, we rightly accuse the the critic who destroys too many illusions, but maybe we have given the critic too free a reign in deconstructing age-old shibboleths.\nFrederich: "
+rounds = 15
+
+[model_params]
+ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
+n_ctx = 500
+
+[gpt_params]
+n_predict = 167
+temp = 0.5
+top_k = 100
+top_p = 0.95
+repeat_last_n = 256
+repeat_penalty = 1.5
