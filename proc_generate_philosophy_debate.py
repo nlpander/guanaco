@@ -49,10 +49,12 @@ def get_last_utterance(output, speakers=['Frederich', 'Ralph']):
 def split_segment_speaker_midsentence(segment, speakers=['Frederich','Ralph']):
     
     for speaker in speakers:
+        
         tmp = re.findall(f'\S({speaker}: )', segment)
         if len(tmp) != 0:
             subsegs = segment.split(tmp[0])
             output_segment = subsegs[0] + '\n' + speaker + ': ' + subsegs[1]
+            break
         else:
             output_segment = segment
             

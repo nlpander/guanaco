@@ -15,8 +15,8 @@ n_ctx = 400
 
 [gpt_params]
 n_predict = 133
-temp = 0.5
+temp = 0.2
 top_k = 100
 top_p = 0.95
-repeat_last_n = 256
-repeat_penalty = 1.5
+repeat_last_n = 128
+repeat_penalty = 1.2
