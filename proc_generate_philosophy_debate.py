@@ -45,8 +45,21 @@ def get_last_utterance(output, speakers=['Frederich', 'Ralph']):
     last_speaker_idx = max(mentions.values())
     return output[last_speaker_idx:]
 
+# split the segment if a speaker section begins mid-sentence
+def split_segment_speaker_midsentence(segment, speakers=['Frederich','Ralph']):
+    
+    for speaker in speakers:
+        tmp = re.findall(f'\S({speaker}: )', segment)
+        if len(tmp) != 0:
+            subsegs = segment.split(tmp[0])
+            output_segment = subsegs[0] + '\n' + speaker + ': ' + subsegs[1]
+        else:
+            output_segment = segment
+            
+    return output_segment
 
-def get_new_prompt(output, n_keep=150, speakers=['Frederich','Ralph']):
+#get new prompt
+def get_new_prompt(output, conversation_list, n_keep=150, speakers=['Frederich','Ralph']):
     
     ### keep start of prompt     
     start_prompt = '\n'.join(output.split('\n')[0:2])
@@ -68,32 +81,48 @@ def get_new_prompt(output, n_keep=150, speakers=['Frederich','Ralph']):
     
     segments = sent_tokenize(next_output)[::-1]
     segments_to_keep = []
-    
-    while total_len < n_keep and k < len(segments):
-        
-        segment = segments[k]
-        N = len(TreebankWordTokenizer().tokenize(segment))
+    all_segments = []
 
+    for i in range(0,len(segments)):
+        
+        segment = segments[i]
+        N = len(TreebankWordTokenizer().tokenize(segment))
         total_len += N
-        segments_to_keep.append(segment)
+        
+        if total_len < n_keep:
+            segments_to_keep.append(segment)
             
-        k += 1
-    
+        all_segments.append(segment)
+        
     segments_to_keep = segments_to_keep[::-1]
+    all_segments = all_segments[::-1]
     
     ### construct the new prompt with the start prompt and the segments added 
     
     new_prompt = start_prompt
+    #conversation = ''
     
-    for segment in segments_to_keep:
+    for j in range(0,len(all_segments)):
         
+        segment = all_segments[j].replace('\n','')
+        
+        ### append full sentences to the conversation list and the new prompt to inject
         if len(re.findall("[.!?]",segment)) != 0:
-            new_prompt = new_prompt + '\n' + segment
         
+            if segment not in conversation_list:
+                
+                #if speaker contained in segment split the segment
+                segment = split_segment_speaker_midsentence(segment, speakers)
+                conversation_list.append(segment)
+                
+            if j < len(segments_to_keep):
+                new_prompt = new_prompt + '\n' + segments_to_keep[j]
+ 
+    ### get the new speaker and append them to the prompt 
     next_speaker = get_next_speaker(new_prompt, speakers)
     new_prompt += '\n' + next_speaker + ': ' 
     
-    return new_prompt
+    return new_prompt, conversation_list
 
 
 def main(argv):        
@@ -116,30 +145,42 @@ def main(argv):
     logger.info('Rounds: %d', rounds)
     logger.info('Output file: %s', fname_out)
 
-
+    print(speaker1)
+    print(speaker2)
+    
     # Load the model.
     model = Model(**cfg['model_params'])
 
     # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
     all_outputs = [start_prompt]
+    conversation_list = []
+    conv_len = len(conversation_list)
 
     # Take the initial prompt and prepare it for the first round.
-    prompt = get_new_prompt(start_prompt)    
+    # prompt = get_new_prompt(start_prompt, speakers=[speaker1,speaker2])
+    prompt = start_prompt
 
     # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
     # rotate after each round.
     for n in tqdm(range(0,rounds)):
-        print('========= rolling prompt ==========')
-        print(prompt)
-        print('========= /rolling prompt ==========')
 
-        output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':os.cpu_count()}})
-        prompt = get_new_prompt(output, n_keep=int(cfg['model_params']['n_ctx']/2),speakers=[speaker1,speaker2])
-        last_utterance = get_last_utterance(output, speakers=[speaker1,speaker2])
-        all_outputs.append(last_utterance)
+        output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':16}})
+                
+        prompt, conversation_list = get_new_prompt(output, conversation_list, \
+                                n_keep=int(2*cfg['model_params']['n_ctx']/3),\
+                                speakers=[speaker1,speaker2])
+        
+        print('========= output ==========')
 
+        print('\n'.join(conversation_list[conv_len:]))
+
+        print('========= output ==========')    
+
+        # update conversation length
+        conv_len = len(conversation_list)        
+        
     with open(fname_out, 'w') as f:
-        f.write('\n--------------------\n'.join(all_outputs))
+        f.write('\n'.join(conversation_list))
     
         
 if __name__ == "__main__":
