@@ -166,7 +166,7 @@ def main(argv):
     # rotate after each round.
     for n in tqdm(range(0,rounds)):
 
-        output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':16}})
+        output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
                 
         prompt, conversation_list = get_new_prompt(output, conversation_list, \
                                 n_keep=int(2*cfg['model_params']['n_ctx']/3),\

@@ -8,15 +8,16 @@ Frederich: God is dead and we have murdered him, what is left is gaping hole int
 Ralph: Indeed, for great is paint and God is the painter, we rightly accuse the the critic who destroys too many illusions, but maybe we have given the critic too free a reign in deconstructing age-old shibboleths.
 """
 rounds = 15
+n_threads = 5
 
 [model_params]
 ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
 n_ctx = 400
 
 [gpt_params]
-n_predict = 133
-temp = 0.2
+n_predict = 130
+temp = 0.35
 top_k = 100
 top_p = 0.95
-repeat_last_n = 128
+repeat_last_n = 256
 repeat_penalty = 1.2

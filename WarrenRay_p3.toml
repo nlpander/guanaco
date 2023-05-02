@@ -8,14 +8,15 @@ Ray: Diversification is the greatest lesson I've learned in investing, to be wro
 Warren: Diversification is an important practice, however in the main question in stocks you have to ask yourself is 'do I understand how this business works ?' if you cannot answer this then don't bother investing. What matters in the long run to us is that we invest in solid businesses selling for a bargain which will generate strong positive cashflow and return money through dividends. Gold and currencies do not generate cashflow.
 """
 rounds = 15
+n_threads = 5
 
 [model_params]
 #ggml_model = '/home/taraful/llama.cpp/models/7B/ggml_model_q4_0.bin'
 ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
-n_ctx = 500
+n_ctx = 400
 
 [gpt_params]
-n_predict = 167
+n_predict = 130
 temp = 0.35
 top_k = 100
 top_p = 0.95

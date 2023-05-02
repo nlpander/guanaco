@@ -8,6 +8,7 @@ Carl: Marcus, we know you have been through many battles through life both with 
 Marcus: The battle which posed a greater challenge was 
 """
 rounds = 15
+n_threads = 5
 
 [model_params]
 #ggml_model = '/home/taraful/llama.cpp/models/7B/ggml_model_q4_0.bin'
