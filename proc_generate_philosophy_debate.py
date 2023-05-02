@@ -10,6 +10,7 @@ from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 import re
 import os, sys
 import toml
+import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ flags.DEFINE_string('config', 'FredRalph_p1.toml', 'Path to the TOML config')
 flags.DEFINE_string('ggml-model', None, 'Path to the GGML model')
 flags.DEFINE_integer('rounds', None, 'Number of rounds to execute')
 flags.DEFINE_string('output', None, 'Output file')
-
+flags.DEFINE_float('max-temp-randomness', 0.0, 'Max temperature randomness from baseline')
 
 def load_toml(fname):
     
@@ -127,6 +128,10 @@ def get_new_prompt(output, conversation_list, n_keep=150, speakers=['Frederich',
     return new_prompt, conversation_list
 
 
+def get_temp(baseline_temp, max_randomness):
+    return max(0, baseline_temp + ((random.random() - 0.5) * max_randomness))
+
+
 def main(argv):        
     cfg = load_toml(FLAGS.config)
     now = dt.datetime.now().replace(microsecond=0)
@@ -138,14 +143,22 @@ def main(argv):
     cfg['model_params']['ggml_model'] = FLAGS['ggml-model'].value or cfg['model_params']['ggml_model']
     rounds = FLAGS['rounds'].value or cfg['debate_params']['rounds']
     fname_out = FLAGS['output'].value or f'{FLAGS["config"].value.strip(".toml")}_{formatted_date}.txt'
+    max_temp_randomness = FLAGS['max-temp-randomness'].value
 
     start_prompt = cfg['debate_params']['initial_prompt']
     speaker1 = cfg['debate_params']['speaker1_fullname'].split(' ')[0]
     speaker2 = cfg['debate_params']['speaker2_fullname'].split(' ')[0]
 
+    # Keep track of baseline temp since we will be modifying this pseudo-randomly.
+    baseline_temp = cfg['gpt_params']['temp']
+
     logger.info('Using model: %s', cfg['model_params']['ggml_model'])
     logger.info('Rounds: %d', rounds)
     logger.info('Output file: %s', fname_out)
+    logger.info('Baseline temp: %f', baseline_temp)
+    logger.info('Max temp randomness: %f', max_temp_randomness)
+    logger.info('Speaker 1: %s', speaker1)
+    logger.info('Speaker 2: %s', speaker2)
 
     print(speaker1)
     print(speaker2)
@@ -166,6 +179,7 @@ def main(argv):
     # rotate after each round.
     for n in tqdm(range(0,rounds)):
 
+        cfg['gpt_params']['temp'] = get_temp(baseline_temp, max_temp_randomness)
         output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
                 
         prompt, conversation_list = get_new_prompt(output, conversation_list, \
