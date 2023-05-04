@@ -1,0 +1,24 @@
+[debate_params]
+speaker1_fullname = "Carl Jung"
+speaker2_fullname = "Marcus Aurelius"
+initial_prompt = """
+You are the philosopher Carl Jung and you are having a conversation with your friend and fellow philosopher Marcus Aurelius. You emphatically put forward your thoughts in each exchange, sometimes giving an original thought, sometimes challenging your friend's ideas.You have many questions for each other. 
+
+Carl: Marcus, we know you have been through many battles through life both with wins and defeats. We know you have also won internal battles, which would you say was more difficult to combat? 
+Marcus: The battle which posed a greater challenge was 
+"""
+rounds = 10
+n_threads = 8
+
+[model_params]
+#ggml_model = '/home/taraful/llama.cpp/models/7B/ggml_model_q4_0.bin'
+ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
+n_ctx = 400
+
+[gpt_params]
+n_predict = 130
+temp = 0.35
+top_k = 100
+top_p = 0.95
+repeat_last_n = 400
+repeat_penalty = 1.2

@@ -1,6 +1,7 @@
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
+import numpy as np
 import pickle as pkl
 
 from absl import flags, app
@@ -22,7 +23,10 @@ flags.DEFINE_string('config', 'FredRalph_p1.toml', 'Path to the TOML config')
 flags.DEFINE_string('ggml-model', None, 'Path to the GGML model')
 flags.DEFINE_integer('rounds', None, 'Number of rounds to execute')
 flags.DEFINE_string('output', None, 'Output file')
+flags.DEFINE_string('temperature-mode','none', 'The style of decay or randomness you desire for the conversation')
 flags.DEFINE_float('max-temp-randomness', 0.0, 'Max temperature randomness from baseline')
+flags.DEFINE_float('period', None, 'number of periods of exponential decay required in the conversation')
+flags.DEFINE_float('decay-constant', 0.05, 'decay constant for the exponential decay')
 
 def load_toml(fname):
     
@@ -111,11 +115,11 @@ def get_new_prompt(output, conversation_list, n_keep=150, speakers=['Frederich',
         
         ### append full sentences to the conversation list and the new prompt to inject
         if len(re.findall("[.!?]",segment)) != 0:
-        
-            if segment not in conversation_list:
-                
-                #if speaker contained in segment split the segment
-                segment = split_segment_speaker_midsentence(segment, speakers)
+
+            #if speaker contained in segment split the segment
+            segment = split_segment_speaker_midsentence(segment, speakers)
+                        
+            if segment not in conversation_list:                
                 conversation_list.append(segment)
                 
             if j < len(segments_to_keep):
@@ -132,6 +136,30 @@ def get_temp(baseline_temp, max_randomness):
     return max(0, baseline_temp + ((random.random() - 0.5) * max_randomness))
 
 
+def get_temperature_exp_decay(n, baseline_temperature, total_rounds, decay_constant=0.05, period=None):
+    
+    if n < total_rounds:
+    
+        if period and period < total_rounds:
+            schedule = np.array([])
+            cycles = int(np.floor(total_rounds/period))
+
+            for i in range(0,cycles):
+                x = np.arange(0,period)
+                schedule = np.hstack((schedule,baseline_temperature*np.exp(-decay_constant*x)))
+        else:
+
+            x = np.arange(0,total_rounds)
+            schedule = baseline_temperature*np.exp(-decay_constant*x)
+
+        return schedule[n]
+    
+    else:
+        
+        print('conversation round exceeds total rounds')
+        return 
+            
+    
 def main(argv):        
     cfg = load_toml(FLAGS.config)
     now = dt.datetime.now().replace(microsecond=0)
@@ -144,6 +172,9 @@ def main(argv):
     rounds = FLAGS['rounds'].value or cfg['debate_params']['rounds']
     fname_out = FLAGS['output'].value or f'{FLAGS["config"].value.strip(".toml")}_{formatted_date}.txt'
     max_temp_randomness = FLAGS['max-temp-randomness'].value
+    temp_mode = FLAGS['temperature-mode'].value
+    decay_constant = FLAGS['decay-constant'].value
+    period = FLAGS['period'].value
 
     start_prompt = cfg['debate_params']['initial_prompt']
     speaker1 = cfg['debate_params']['speaker1_fullname'].split(' ')[0]
@@ -151,7 +182,7 @@ def main(argv):
 
     # Keep track of baseline temp since we will be modifying this pseudo-randomly.
     baseline_temp = cfg['gpt_params']['temp']
-
+    
     logger.info('Using model: %s', cfg['model_params']['ggml_model'])
     logger.info('Rounds: %d', rounds)
     logger.info('Output file: %s', fname_out)
@@ -177,9 +208,15 @@ def main(argv):
 
     # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
     # rotate after each round.
-    for n in tqdm(range(0,rounds)):
-
-        cfg['gpt_params']['temp'] = get_temp(baseline_temp, max_temp_randomness)
+    for n in tqdm(range(0,rounds)):            
+        
+        if temp_mode == 'none':
+            cfg['gpt_params']['temp'] = baseline_temp
+        elif temp_mode == 'rand':
+            cfg['gpt_params']['temp'] = get_temp(baseline_temp, max_temp_randomness)
+        elif temp_mode == 'exp':
+            cfg['gpt_params']['temp'] = get_temperature_exp_decay(n, baseline_temp, rounds, decay_constant, period)
+        
         output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
                 
         prompt, conversation_list = get_new_prompt(output, conversation_list, \
@@ -196,7 +233,7 @@ def main(argv):
         conv_len = len(conversation_list)        
         
     with open(fname_out, 'w') as f:
-        f.write('\n'.join(conversation_list))
+        f.write('---------------------------------------'.join(conversation_list))
     
         
 if __name__ == "__main__":
