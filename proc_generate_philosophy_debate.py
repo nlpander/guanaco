@@ -1,9 +1,14 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from frontend import gradio
 
 =======
 import frontend
 >>>>>>> d9a9d1d (Moved all UI components to frontend/)
+=======
+from frontend import gradio
+
+>>>>>>> 04311ea (Completes migration to frontend/)
 
 from pyllamacpp.model import Model
 from tqdm import tqdm
@@ -267,6 +272,9 @@ def main(argv):
     model = Model(**cfg['model_params'])
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 04311ea (Completes migration to frontend/)
     if FLAGS.gradio:
         ui = gradio.gen_ui(model, start_prompt, exec_round, cfg)
         ui.launch()
@@ -285,6 +293,7 @@ def main(argv):
             speaker2,
             fname_out
         )
+<<<<<<< HEAD
 
 
 if __name__ == '__main__':
@@ -328,6 +337,8 @@ if __name__ == '__main__':
 # def main(argv):
 #     if FLAGS.gradio:
 #         ui = frontend.gen_ui()
+=======
+>>>>>>> 04311ea (Completes migration to frontend/)
 
 
 if __name__ == '__main__':
