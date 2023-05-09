@@ -1,18 +1,16 @@
+import frontend
+
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
 import numpy as np
 import pickle as pkl
-import json
-
-import gradio as gr
 
 from absl import flags, app
 import logging
 
 from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 import re
-import os, sys
 import toml
 import random
 
@@ -30,6 +28,7 @@ flags.DEFINE_string('temperature-mode','none', 'The style of decay or randomness
 flags.DEFINE_float('max-temp-randomness', 0.0, 'Max temperature randomness from baseline')
 flags.DEFINE_float('period', None, 'number of periods of exponential decay required in the conversation')
 flags.DEFINE_float('decay-constant', 0.05, 'decay constant for the exponential decay')
+flags.DEFINE_bool('gradio', False, 'Whether to spin up a UI or not')
 
 def load_toml(fname):
     
@@ -161,6 +160,19 @@ def get_temperature_exp_decay(n, baseline_temperature, total_rounds, decay_const
         
         print('conversation round exceeds total rounds')
         return 
+
+
+def exec_round(model, cfg, prompt, conversation_list, temperature, speaker1, speaker2):
+    cfg['gpt_params']['temp'] = temperature
+    print('tmp', temperature)
+    print('prompt:', prompt)
+    output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
+    print('output:', output)
+    prompt, conversation_list = get_new_prompt(output, conversation_list, \
+                            n_keep=int(2*cfg['model_params']['n_ctx']/3),\
+                            speakers=[speaker1,speaker2])
+
+    return prompt, conversation_list
             
     
 def cli_main(argv):
@@ -202,7 +214,6 @@ def cli_main(argv):
     model = Model(**cfg['model_params'])
 
     # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
-    all_outputs = [start_prompt]
     conversation_list = []
     conv_len = len(conversation_list)
 
@@ -234,62 +245,13 @@ def cli_main(argv):
     with open(fname_out, 'w') as f:
         f.write('\n'.join(conversation_list))
 
-    
-def exec_round(model, cfg, prompt, conversation_list, temperature, speaker1, speaker2):
-    cfg['gpt_params']['temp'] = temperature
-    print('tmp', temperature)
-    print('prompt:', prompt)
-    output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
-    print('output:', output)
-    prompt, conversation_list = get_new_prompt(output, conversation_list, \
-                            n_keep=int(2*cfg['model_params']['n_ctx']/3),\
-                            speakers=[speaker1,speaker2])
-
-    return prompt, conversation_list
 
 
+# def main(argv):
+#     if FLAGS.gradio:
+#         ui = frontend.gen_ui()
 
-with gr.Blocks() as ui:
-    cfg = load_toml('/home/fabian/dev/guanaco/JungAurelius_p3.toml')
-    model = Model(**cfg['model_params'])
-    state = gr.State(json.dumps({
-        'prompt': cfg['debate_params']['initial_prompt'],
-        'conv_list': [],
-    }))
 
-    def gradio_in(speaker1, speaker2, temperature, state):
-        parsed = json.loads(state)
-        prompt, conv_list = exec_round(model, cfg, parsed['prompt'], parsed['conv_list'], temperature, speaker1, speaker2)
-        return ['\n'.join(conv_list), json.dumps({
-                'prompt': prompt,
-                'conv_list': conv_list
-        })]
+if __name__ == '__main__':
+    app.run(main)
 
-    with gr.Row() as row:
-        with gr.Column() as col:
-            speaker1 = gr.Textbox(label='Speaker 1')
-            speaker2 = gr.Textbox(label='Speaker 2')
-            temperature = gr.Slider(0, 1, label='Temperature')
-            
-            next_round_btn = gr.Button('Next round')     
-
-        with gr.Column() as col:
-            output = gr.Textbox(label='Output')
-
-        next_round_btn.click(
-            fn=gradio_in,
-            inputs=[speaker1, speaker2, temperature, state],
-            outputs=[output, state])
-
-        
-
-ui.launch()
-   
-        
-# # if __name__ == "__main__":
-# demo = gr.Interface(
-#     fn=gradio_in,
-#     inputs=["text", "text", gr.Slider(0, 1)],
-#     outputs="text")
-# demo.launch()
-# # app.run(main)
