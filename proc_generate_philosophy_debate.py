@@ -1,14 +1,15 @@
+<<<<<<< HEAD
 from frontend import gradio
 
+=======
+import frontend
+>>>>>>> d9a9d1d (Moved all UI components to frontend/)
 
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
 import numpy as np
 import pickle as pkl
-import json
-
-import gradio as gr
 
 from absl import flags, app
 import logging
@@ -265,6 +266,7 @@ def main(argv):
     # Load the model.
     model = Model(**cfg['model_params'])
 
+<<<<<<< HEAD
     if FLAGS.gradio:
         ui = gradio.gen_ui(model, start_prompt, exec_round, cfg)
         ui.launch()
@@ -288,3 +290,47 @@ def main(argv):
 if __name__ == '__main__':
     app.run(main)
 
+=======
+    # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
+    conversation_list = []
+    conv_len = len(conversation_list)
+
+    # Take the initial prompt and prepare it for the first round.
+    prompt = start_prompt
+
+    # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
+    # rotate after each round.
+    for n in tqdm(range(0,rounds)):            
+        
+        if temp_mode == 'none':
+            cfg['gpt_params']['temp'] = baseline_temp
+        elif temp_mode == 'rand':
+            temperature = get_temp(baseline_temp, max_temp_randomness)
+        elif temp_mode == 'exp':
+            cfg['gpt_params']['temp'] = get_temperature_exp_decay(n, baseline_temp, rounds, decay_constant, period)
+        
+        prompt, conversation_list = exec_round(model, cfg, prompt, converesation_list, temperature, speaker1, speaker2)
+        
+        print('========= output ==========')
+
+        print('\n'.join(conversation_list[conv_len:]))
+
+        print('========= output ==========')    
+
+        # update conversation length
+        conv_len = len(conversation_list)        
+        
+    with open(fname_out, 'w') as f:
+        f.write('\n'.join(conversation_list))
+
+
+
+# def main(argv):
+#     if FLAGS.gradio:
+#         ui = frontend.gen_ui()
+
+
+if __name__ == '__main__':
+    app.run(main)
+
+>>>>>>> d9a9d1d (Moved all UI components to frontend/)
