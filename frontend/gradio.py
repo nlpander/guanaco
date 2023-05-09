@@ -23,8 +23,8 @@ def gen_ui(
 
     def _next_round_btn_on_click(speaker1, speaker2, temperature, state):
         state = UIState(**json.loads(state))
-        prompt, conv_list = exec_round(model, cfg, state.prompt, state.conv_list, temperature, speaker1, speaker2)
-        return UIState(prompt, conv_list).to_json()
+        prompt, conversation_list = exec_round(model, cfg, state.prompt, state.conversation_list, temperature, speaker1, speaker2)
+        return UIState(prompt, conversation_list).to_json()
 
     with gr.Blocks() as ui:
         initial_state = UIState(prompt=initial_prompt, conversation_list=[])
@@ -32,8 +32,8 @@ def gen_ui(
 
         with gr.Row() as row:
             with gr.Column() as col:
-                speaker1 = gr.Textbox(label='Speaker 1')
-                speaker2 = gr.Textbox(label='Speaker 2')
+                speaker1 = gr.Textbox(label='Speaker 1', value='Carl Jung')
+                speaker2 = gr.Textbox(label='Speaker 2', value='Marcus Aurelius')
                 temperature = gr.Slider(0, 1, label='Temperature')                
                 next_round_btn = gr.Button('Next round')     
 
@@ -41,7 +41,7 @@ def gen_ui(
                 output = gr.Textbox(label='Output')
 
             next_round_btn.click(
-                fn=lambda *args, **kwargs: _next_round_btn_on_click(exec_round, *args, **kwargs),
+                fn=_next_round_btn_on_click,
                 inputs=[speaker1, speaker2, temperature, state],
                 outputs=[output, state])
 
