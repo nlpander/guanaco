@@ -1,3 +1,5 @@
+from frontend import gradio
+
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
@@ -9,7 +11,6 @@ import logging
 
 from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
 import re
-import os, sys
 import toml
 import random
 
@@ -27,6 +28,7 @@ flags.DEFINE_string('temperature-mode','none', 'The style of decay or randomness
 flags.DEFINE_float('max-temp-randomness', 0.0, 'Max temperature randomness from baseline')
 flags.DEFINE_float('period', None, 'number of periods of exponential decay required in the conversation')
 flags.DEFINE_float('decay-constant', 0.05, 'decay constant for the exponential decay')
+flags.DEFINE_bool('gradio', False, 'Whether to spin up a UI or not')
 
 def load_toml(fname):
     
@@ -158,9 +160,70 @@ def get_temperature_exp_decay(n, baseline_temperature, total_rounds, decay_const
         
         print('conversation round exceeds total rounds')
         return 
+
+
+def exec_round(model, cfg, prompt, conversation_list, temperature, speaker1, speaker2):
+    cfg['gpt_params']['temp'] = temperature
+    print('tmp', temperature)
+    print('prompt:', prompt)
+    output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
+    print('output:', output)
+    prompt, conversation_list = get_new_prompt(output, conversation_list, \
+                            n_keep=int(2*cfg['model_params']['n_ctx']/3),\
+                            speakers=[speaker1,speaker2])
+
+    return prompt, conversation_list
             
     
-def main(argv):        
+def cli_main(
+        start_prompt,
+        temp_mode,
+        baseline_temp,
+        max_temp_randomness,
+        rounds,
+        decay_constant,
+        period,
+        model,
+        cfg,
+        speaker1,
+        speaker2,
+        fname_out):
+
+    # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
+    conversation_list = []
+    conv_len = len(conversation_list)
+
+    # Take the initial prompt and prepare it for the first round.
+    prompt = start_prompt
+
+    # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
+    # rotate after each round.
+    for n in tqdm(range(0,rounds)):            
+        
+        if temp_mode == 'none':
+            temperature = baseline_temp
+        elif temp_mode == 'rand':
+            temperature = get_temp(baseline_temp, max_temp_randomness)
+        elif temp_mode == 'exp':
+            temperature = get_temperature_exp_decay(n, baseline_temp, rounds, decay_constant, period)
+        
+        prompt, conversation_list = exec_round(model, cfg, prompt, conversation_list, temperature, speaker1, speaker2)
+        
+        print('========= output ==========')
+
+        print('\n'.join(conversation_list[conv_len:]))
+
+        print('========= output ==========')    
+
+        # update conversation length
+        conv_len = len(conversation_list)        
+        
+    with open(fname_out, 'w') as f:
+        f.write('\n'.join(conversation_list))
+
+
+
+def main(argv):
     cfg = load_toml(FLAGS.config)
     now = dt.datetime.now().replace(microsecond=0)
     formatted_date = now.strftime("%d%m%Y_%H%M%S")
@@ -190,51 +253,33 @@ def main(argv):
     logger.info('Max temp randomness: %f', max_temp_randomness)
     logger.info('Speaker 1: %s', speaker1)
     logger.info('Speaker 2: %s', speaker2)
+    
 
     print(speaker1)
     print(speaker2)
-    
+
     # Load the model.
     model = Model(**cfg['model_params'])
 
-    # Keep track of the debate. As the debate progresses, we will add the last utterance of each round to this list.
-    all_outputs = [start_prompt]
-    conversation_list = []
-    conv_len = len(conversation_list)
+    if FLAGS.gradio:
+        ui = gradio.gen_ui(model, start_prompt, exec_round, cfg)
+        ui.launch()
+    else:
+        cli_main(
+            start_prompt,
+            temp_mode,
+            baseline_temp,
+            max_temp_randomness,
+            rounds,
+            decay_constant,
+            period,
+            model,
+            cfg,
+            speaker1,
+            speaker2,
+            fname_out
+        )
 
-    # Take the initial prompt and prepare it for the first round.
-    # prompt = get_new_prompt(start_prompt, speakers=[speaker1,speaker2])
-    prompt = start_prompt
 
-    # Run the debate for the specified number of rounds. Each round results in a new answer from one of the speakers. Speakers
-    # rotate after each round.
-    for n in tqdm(range(0,rounds)):            
-        
-        if temp_mode == 'none':
-            cfg['gpt_params']['temp'] = baseline_temp
-        elif temp_mode == 'rand':
-            cfg['gpt_params']['temp'] = get_temp(baseline_temp, max_temp_randomness)
-        elif temp_mode == 'exp':
-            cfg['gpt_params']['temp'] = get_temperature_exp_decay(n, baseline_temp, rounds, decay_constant, period)
-        
-        output = model.generate(prompt, **{**cfg['gpt_params'],**{'n_threads':cfg['debate_params']['n_threads']}})
-                
-        prompt, conversation_list = get_new_prompt(output, conversation_list, \
-                                n_keep=int(2*cfg['model_params']['n_ctx']/3),\
-                                speakers=[speaker1,speaker2])
-        
-        print('========= output ==========')
-
-        print('\n'.join(conversation_list[conv_len:]))
-
-        print('========= output ==========')    
-
-        # update conversation length
-        conv_len = len(conversation_list)        
-        
-    with open(fname_out, 'w') as f:
-        f.write('---------------------------------------'.join(conversation_list))
-    
-        
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(main)
