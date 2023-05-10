@@ -129,6 +129,14 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "cfgv"
+version = "3.3.1"
+description = "Validate configuration and produce human readable error messages."
+category = "main"
+optional = false
+python-versions = ">=3.6.1"
+
+[[package]]
 name = "charset-normalizer"
 version = "3.1.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
@@ -199,6 +207,14 @@ description = "Decorators for Humans"
 category = "main"
 optional = false
 python-versions = ">=3.5"
+
+[[package]]
+name = "distlib"
+version = "0.3.6"
+description = "Distribution utilities"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "entrypoints"
@@ -459,6 +475,17 @@ torch = ["torch"]
 typing = ["types-pyyaml", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
 
 [[package]]
+name = "identify"
+version = "2.5.24"
+description = "File identification library for Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+license = ["ukkonen"]
+
+[[package]]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -687,6 +714,14 @@ tgrep = ["pyparsing"]
 twitter = ["twython"]
 
 [[package]]
+name = "nodeenv"
+version = "1.7.0"
+description = "Node.js virtual environment builder"
+category = "main"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*"
+
+[[package]]
 name = "numpy"
 version = "1.24.3"
 description = "Fundamental package for array computing in Python"
@@ -849,6 +884,33 @@ python-versions = ">=3.7"
 [package.extras]
 docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-inline-tabs", "sphinx-removed-in", "sphinxext-opengraph"]
 tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
+
+[[package]]
+name = "platformdirs"
+version = "3.5.0"
+description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+docs = ["furo (>=2023.3.27)", "proselint (>=0.13)", "sphinx-autodoc-typehints (>=1.23,!=1.23.4)", "sphinx (>=6.1.3)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "pytest (>=7.3.1)"]
+
+[[package]]
+name = "pre-commit"
+version = "3.3.1"
+description = "A framework for managing and maintaining multi-language pre-commit hooks."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+cfgv = ">=2.0.0"
+identify = ">=1.0.0"
+nodeenv = ">=0.11.1"
+pyyaml = ">=5.1"
+virtualenv = ">=20.10.0"
 
 [[package]]
 name = "protobuf"
@@ -1378,6 +1440,23 @@ decorator = ">=3.4.0"
 test = ["pytest (>=2.2.3)", "flake8 (>=2.4.0)", "isort (>=4.2.2)"]
 
 [[package]]
+name = "virtualenv"
+version = "20.23.0"
+description = "Virtual Python Environment builder"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+distlib = ">=0.3.6,<1"
+filelock = ">=3.11,<4"
+platformdirs = ">=3.2,<4"
+
+[package.extras]
+docs = ["furo (>=2023.3.27)", "proselint (>=0.13)", "sphinx-argparse (>=0.4)", "sphinx (>=6.1.3)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=22.12)"]
+test = ["covdefaults (>=2.3)", "coverage-enable-subprocess (>=1)", "coverage (>=7.2.3)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest-env (>=0.8.1)", "pytest-freezegun (>=0.4.2)", "pytest-mock (>=3.10)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "pytest (>=7.3.1)", "setuptools (>=67.7.1)", "time-machine (>=2.9)"]
+
+[[package]]
 name = "watchdog"
 version = "3.0.0"
 description = "Filesystem events monitoring"
@@ -1423,7 +1502,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "cf1879429cb961658bc15eab8f41ce52344efc847803cffda075543dff750a19"
+content-hash = "825e574afbf7527c71bef8c55e23e8562b0322bdd4e96296bf2a11b31721d326"
 
 [metadata.files]
 absl-py = []
@@ -1437,6 +1516,7 @@ attrs = []
 blinker = []
 cachetools = []
 certifi = []
+cfgv = []
 charset-normalizer = []
 click = []
 cmake = []
@@ -1444,6 +1524,7 @@ colorama = []
 contourpy = []
 cycler = []
 decorator = []
+distlib = []
 entrypoints = []
 fastapi = []
 ffmpy = []
@@ -1459,6 +1540,7 @@ h11 = []
 httpcore = []
 httpx = []
 huggingface-hub = []
+identify = []
 idna = []
 importlib-metadata = []
 jinja2 = []
@@ -1476,6 +1558,7 @@ mpmath = []
 multidict = []
 networkx = []
 nltk = []
+nodeenv = []
 numpy = []
 nvidia-cublas-cu11 = []
 nvidia-cuda-cupti-cu11 = []
@@ -1492,6 +1575,8 @@ orjson = []
 packaging = []
 pandas = []
 pillow = []
+platformdirs = []
+pre-commit = []
 protobuf = []
 pyarrow = []
 pydantic = []
@@ -1535,6 +1620,7 @@ uc-micro-py = []
 urllib3 = []
 uvicorn = []
 validators = []
+virtualenv = []
 watchdog = []
 websockets = []
 yarl = []
