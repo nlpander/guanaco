@@ -6,12 +6,12 @@ To run:
 
 
 ```
-$ python proc_generate_philosophy_debate.py --help
+$ python main.py --help
 
-       USAGE: proc_generate_philosophy_debate.py [flags]
+       USAGE: main.py [flags]
 flags:
 
-proc_generate_philosophy_debate.py:
+main.py:
   --config: Path to the TOML config
     (default: 'FredRalph_p1.toml')
   --decay-constant: decay constant for the exponential decay
@@ -34,7 +34,7 @@ proc_generate_philosophy_debate.py:
 
 For example:
 ```
-$ python proc_generate_philosophy_debate.py \
+$ python main.py \
       --ggml-model /home/fabian/dev/llama.cpp/models/7B/ggml-model-f16-q4_0.bin \
       --rounds 1 \
       --out put output.txt \
