@@ -9,7 +9,6 @@ import logging
 
 import toml
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -142,7 +141,7 @@ def main(argv):
 
     if FLAGS.gradio:
         frontend = ui.gen_ui(model, start_prompt, exec_round, cfg)
-        frontend.launch()
+        frontend.queue().launch()
     else:
         cli_main(
             start_prompt,
