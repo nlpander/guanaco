@@ -1,7 +1,8 @@
 import json
 from typing import Callable, List
 from dataclasses import dataclass, asdict
-
+from src import segments
+from tqdm import tqdm
 
 import gradio as gr
 from pyllamacpp.model import Model
@@ -39,9 +40,11 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
         cfg["gpt_params"]["repeat_penalty"] = float(repeat_penalty)
 
         if additional_ctx:
-            state.conversation_list.append(additional_ctx)
+            state.prompt = segments.strip_last_speaker_add_context(state.prompt, 
+                                                          additional_ctx)
 
-        for i in range(int(num_rounds)):
+
+        for i in tqdm(range(int(num_rounds))):
             prompt, conversation_list = exec_round(
                 model,
                 cfg,
@@ -50,6 +53,7 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 temperature,
                 speaker1,
                 speaker2,
+                
             )
             state = UIState(prompt, conversation_list)
             yield [

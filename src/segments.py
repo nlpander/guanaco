@@ -24,9 +24,7 @@ def split_segment_speaker_midsentence(segment, speakers=["Frederich", "Ralph"]):
 
 
 # get new prompt
-def get_new_prompt(
-    output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]
-):
+def get_new_prompt(output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]):
     ### keep start of prompt
     start_prompt = "\n".join(output.split("\n")[0:2])
 
@@ -81,8 +79,26 @@ def get_new_prompt(
             if j < len(segments_to_keep):
                 new_prompt = new_prompt + "\n" + segments_to_keep[j]
 
-    ### get the new speaker and append them to the prompt
+    ### if there is no additional context get the new speaker and append them to the prompt
     next_speaker = get_next_speaker(new_prompt, speakers)
-    new_prompt += "\n" + next_speaker + ": "
+    new_prompt += "\n" + next_speaker + ": "     
 
     return new_prompt, conversation_list
+
+
+def strip_last_speaker_add_context(prompt, additional_ctx):
+
+    segments = prompt.split('\n')
+    final_segment = segments[-1]
+    final_segment = re.sub("\w+: ", "", final_segment)
+
+    if final_segment == "":
+        final_segment =  "Host: " + additional_ctx
+    else:
+        final_segment = final_segment + '. ' + "\nHost: " + additional_ctx
+
+    segments[-1] = final_segment
+    new_prompt = '\n'.join(segments)
+
+    return new_prompt
+

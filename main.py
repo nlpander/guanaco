@@ -3,6 +3,7 @@ from src import ui, segments, temperature
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
+import os
 
 from absl import flags, app
 import logging
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 FLAGS = flags.FLAGS
 flags.DEFINE_string("config", "FredRalph_p1.toml", "Path to the TOML config")
 flags.DEFINE_string("ggml-model", None, "Path to the GGML model")
+flags.DEFINE_integer("n-threads", int(os.cpu_count()/2), "Number of threads to use for running model")
 flags.DEFINE_integer("rounds", None, "Number of rounds to execute")
 flags.DEFINE_string("output", None, "Output file")
 flags.DEFINE_string(
@@ -37,8 +39,7 @@ flags.DEFINE_bool("gradio", False, "Whether to spin up a UI or not")
 
 def exec_round(model, cfg, prompt, conversation_list, temperature, speaker1, speaker2):
     cfg["gpt_params"]["temp"] = temperature
-    output = model.generate(
-        prompt,
+    output = model.generate(prompt,
         **{**cfg["gpt_params"], **{"n_threads": cfg["debate_params"]["n_threads"]}},
     )
     prompt, conversation_list = segments.get_new_prompt(
@@ -111,6 +112,7 @@ def main(argv):
     cfg["model_params"]["ggml_model"] = (
         FLAGS["ggml-model"].value or cfg["model_params"]["ggml_model"]
     )
+    cfg["debate_params"]["n_threads"] = FLAGS["n-threads"].value or cfg["debate_params"]["n_threads"]
     rounds = FLAGS["rounds"].value or cfg["debate_params"]["rounds"]
     fname_out = (
         FLAGS["output"].value
