@@ -49,6 +49,7 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 model,
                 cfg,
                 state.prompt,
+                cfg["debate_params"]["ratio_keep"],
                 state.conversation_list,
                 temperature,
                 speaker1,
