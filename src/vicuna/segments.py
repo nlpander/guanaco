@@ -10,7 +10,10 @@ def get_next_speaker(prompt, speakers=["Frederich", "Ralph"]):
 
 
 # get new prompt
-def get_new_prompt(output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]):
+def get_new_prompt(
+    output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]
+):
+    output = "".join(list(output))
     ### keep start of prompt
     start_prompt = "\n".join(output.split("\n")[0:2])
 
@@ -56,7 +59,6 @@ def get_new_prompt(output, conversation_list, n_keep=150, speakers=["Frederich",
 
         ### append full sentences to the conversation list and the new prompt to inject
         if len(re.findall("[.!?]", segment)) != 0:
-
             if segment not in conversation_list:
                 conversation_list.append(segment)
 
@@ -65,24 +67,22 @@ def get_new_prompt(output, conversation_list, n_keep=150, speakers=["Frederich",
 
     ### if there is no additional context get the new speaker and append them to the prompt - from llama segments
     # next_speaker = get_next_speaker(new_prompt, speakers)
-    # new_prompt += "\n" + next_speaker + ": "     
+    # new_prompt += "\n" + next_speaker + ": "
 
     return new_prompt, conversation_list
 
 
 def strip_last_speaker_add_context(prompt, additional_ctx):
-
-    segments = prompt.split('\n')
+    segments = prompt.split("\n")
     final_segment = segments[-1]
     final_segment = re.sub("\w+: ", "", final_segment)
 
     if final_segment == "":
-        final_segment =  "### Human: " + additional_ctx
+        final_segment = "### Human: " + additional_ctx
     else:
-        final_segment = final_segment + '. ' + "\n### Human: " + additional_ctx
+        final_segment = final_segment + ". " + "\n### Human: " + additional_ctx
 
     segments[-1] = final_segment
-    new_prompt = '\n'.join(segments)
+    new_prompt = "\n".join(segments)
 
     return new_prompt
-
