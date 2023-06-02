@@ -45,7 +45,7 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
             )
 
         for i in tqdm(range(int(num_rounds))):
-            prompt, conversation_list = exec_round(
+            stream = exec_round(
                 model,
                 cfg,
                 state.prompt,
@@ -55,12 +55,17 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 speaker1,
                 speaker2,
             )
-            state = UIState(prompt, conversation_list)
-            yield [
-                "\n".join(state.conversation_list),
-                state.to_json(),
-                gr.Textbox.update(value=""),
-            ]
+            for s in stream:
+                if state.conversation_list:
+                    state.conversation_list[-1] += s
+                else:
+                    state.conversation_list = [s]
+                state = UIState(state.prompt, state.conversation_list)
+                yield [
+                    "\n".join(state.conversation_list),
+                    state.to_json(),
+                    gr.Textbox.update(value=""),
+                ]
 
     with gr.Blocks() as ui:
         initial_state = UIState(prompt=None, conversation_list=[])
@@ -97,7 +102,7 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 next_round_btn = gr.Button("Next round")
 
             with gr.Column() as col:
-                output = gr.Textbox(label="Output")
+                output = gr.Textbox(label="Output", streaming=True, live=True)
 
             next_round_btn.click(
                 fn=_next_round_btn_on_click,
