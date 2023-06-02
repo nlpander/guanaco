@@ -55,17 +55,32 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 speaker1,
                 speaker2,
             )
+            output = []
             for s in stream:
                 if state.conversation_list:
                     state.conversation_list[-1] += s
                 else:
                     state.conversation_list = [s]
                 state = UIState(state.prompt, state.conversation_list)
+                output += [s]
                 yield [
                     "\n".join(state.conversation_list),
                     state.to_json(),
                     gr.Textbox.update(value=""),
                 ]
+
+            prompt, conversation_list = segments.get_new_prompt(
+                output,
+                state.conversation_list,
+                n_keep=int(2 * cfg["model_params"]["n_ctx"] / 3),
+                speakers=[speaker1, speaker2],
+            )
+
+            yield [
+                "\n".join(conversation_list),
+                UIState(prompt, conversation_list).to_json(),
+                gr.Textbox.update(value=""),
+            ]
 
     with gr.Blocks() as ui:
         initial_state = UIState(prompt=None, conversation_list=[])
