@@ -10,7 +10,7 @@ Warren: Diversification is an important practice, however in the main question i
 rounds = 15
 
 [model_params]
-ggml_model = '/home/taraful/llama.cpp/models/7B/ggml-model-f16.bin'
+model_path = '/home/taraful/llama.cpp/models/7B/ggml-model-f16.bin'
 n_ctx = 300
 
 [gpt_params]

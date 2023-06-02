@@ -10,7 +10,7 @@ Ralph: Indeed, for great is paint and God is the painter, we rightly accuse the 
 rounds = 15
 
 [model_params]
-ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
+model_path = '/home/taraful/llama.cpp/models/30B/model_path_q4_0.bin'
 n_ctx = 300
 
 [gpt_params]
