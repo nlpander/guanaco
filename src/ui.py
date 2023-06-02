@@ -40,9 +40,9 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
         cfg["gpt_params"]["repeat_penalty"] = float(repeat_penalty)
 
         if additional_ctx:
-            state.prompt = segments.strip_last_speaker_add_context(state.prompt, 
-                                                          additional_ctx)
-
+            state.prompt = segments.strip_last_speaker_add_context(
+                state.prompt, additional_ctx
+            )
 
         for i in tqdm(range(int(num_rounds))):
             prompt, conversation_list = exec_round(
@@ -53,7 +53,6 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 temperature,
                 speaker1,
                 speaker2,
-                
             )
             state = UIState(prompt, conversation_list)
             yield [

@@ -11,8 +11,8 @@ rounds = 8
 n_threads = 8
 
 [model_params]
-ggml_model = '/home/taraful/llama.cpp/models/7B/ggml_model_q4_0.bin'
-#ggml_model = '/home/taraful/llama.cpp/models/30B/ggml_model_q4_0.bin'
+model_path = '/home/taraful/llama.cpp/models/7B/model_path_q4_0.bin'
+#model_path = '/home/taraful/llama.cpp/models/30B/model_path_q4_0.bin'
 n_ctx = 400
 
 [gpt_params]
