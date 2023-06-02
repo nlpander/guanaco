@@ -76,9 +76,9 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                 speakers=[speaker1, speaker2],
             )
 
-            yield [
-                "\n".join(conversation_list),
-                UIState(prompt, conversation_list).to_json(),
+            return [
+                "\n".join(state.conversation_list),
+                UIState(prompt, state.conversation_list).to_json(),
                 gr.Textbox.update(value=""),
             ]
 
