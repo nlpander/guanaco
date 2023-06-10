@@ -75,6 +75,7 @@ def exec_round(
 
 def cli_main(
     start_prompt,
+    ratio_keep,    
     temp_mode,
     baseline_temp,
     max_temp_randomness,
@@ -107,7 +108,7 @@ def cli_main(
             )
 
         prompt, conversation_list = exec_round(
-            model, cfg, prompt, conversation_list, temperature, speaker1, speaker2
+            model, cfg, prompt, ratio_keep, conversation_list, temperature, speaker1, speaker2
         )
 
         print("========= output ==========")
@@ -130,7 +131,6 @@ def main(argv):
     ################
     ## CONFIGURATION
     ################
-    cfg["debate_params"]["ratio_keep"] = FLAGS.ratio_keep
     cfg["model_params"]["model_path"] = (
         FLAGS["model-path"].value or cfg["model_params"]["model_path"]
     )
@@ -146,7 +146,7 @@ def main(argv):
     temp_mode = FLAGS["temperature-mode"].value
     decay_constant = FLAGS["decay-constant"].value
     period = FLAGS["period"].value
-
+    ratio_keep = cfg["debate_params"]["ratio_keep"] or FLAGS.ratio_keep.value
     start_prompt = cfg["debate_params"]["initial_prompt"]
     speaker1 = cfg["debate_params"]["speaker1_fullname"].split(" ")[0]
     speaker2 = cfg["debate_params"]["speaker2_fullname"].split(" ")[0]
@@ -171,6 +171,7 @@ def main(argv):
     else:
         cli_main(
             start_prompt,
+            ratio_keep,
             temp_mode,
             baseline_temp,
             max_temp_randomness,
