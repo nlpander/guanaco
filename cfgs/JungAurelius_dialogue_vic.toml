@@ -1,0 +1,20 @@
+[debate_params]
+speaker1_fullname = "Carl Jung"
+speaker2_fullname = "Marcus Aurelius"
+initial_prompt = """
+### Human: Can you generate a dialogue between the philosopher Carl Jung and Marcus Aurelius during a fictitious meeting between the two. Both philosophers emphatically put forward your thoughts in each exchange, sometimes giving an original thought, sometimes challenging each one another's previous utterance. Please make sure that the dialogue stays deep and probes the essential questions of existence.
+"""
+rounds = 1
+n_threads = 16
+
+[model_params]
+model_path = '/home/taraful/llama.cpp/models/Vicuna/ggml-model-q4_0.bin'
+n_ctx = 1000
+
+[gpt_params]
+n_predict = 512
+temp = 0.7
+top_k = 100
+top_p = 0.95
+repeat_last_n = 512
+repeat_penalty = 1.2

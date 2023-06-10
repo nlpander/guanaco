@@ -20,7 +20,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("config", "FredRalph_p1.toml", "Path to the TOML config")
 flags.DEFINE_string("model-path", None, "Path to the GGML model")
 flags.DEFINE_integer(
-    "n-threads", int(os.cpu_count() / 2), "Number of threads to use for running model"
+    "n-threads", int(os.cpu_count()), "Number of threads to use for running model"
 )
 flags.DEFINE_float(
     "ratio_keep", float(2 / 3), "Proportion of context to keep in next input"
@@ -137,6 +137,10 @@ def main(argv):
     cfg["debate_params"]["n_threads"] = (
         FLAGS["n-threads"].value or cfg["debate_params"]["n_threads"]
     )
+    cfg["debate_params"]["ratio_keep"] = (
+        FLAGS["ratio_keep"].value or cfg["debate_params"]["ratio_keep"]
+    )
+
     rounds = FLAGS["rounds"].value or cfg["debate_params"]["rounds"]
     fname_out = (
         FLAGS["output"].value
@@ -146,7 +150,7 @@ def main(argv):
     temp_mode = FLAGS["temperature-mode"].value
     decay_constant = FLAGS["decay-constant"].value
     period = FLAGS["period"].value
-    ratio_keep = cfg["debate_params"]["ratio_keep"] or FLAGS.ratio_keep.value
+    ratio_keep = cfg["debate_params"]["ratio_keep"]
     start_prompt = cfg["debate_params"]["initial_prompt"]
     speaker1 = cfg["debate_params"]["speaker1_fullname"].split(" ")[0]
     speaker2 = cfg["debate_params"]["speaker2_fullname"].split(" ")[0]
