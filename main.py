@@ -73,9 +73,7 @@ def exec_round(
     return prompt, conversation_list
 
 
-def exec_round_stream(
-    model, cfg, prompt, conversation_list, temperature, speaker1, speaker2
-):
+def exec_round_stream(model, cfg, prompt, temperature):
     cfg["gpt_params"]["temp"] = temperature
     yield from model.generate(
         prompt,
@@ -85,7 +83,7 @@ def exec_round_stream(
 
 def cli_main(
     start_prompt,
-    ratio_keep,    
+    ratio_keep,
     temp_mode,
     baseline_temp,
     max_temp_randomness,
@@ -118,7 +116,14 @@ def cli_main(
             )
 
         prompt, conversation_list = exec_round(
-            model, cfg, prompt, ratio_keep, conversation_list, temperature, speaker1, speaker2
+            model,
+            cfg,
+            prompt,
+            ratio_keep,
+            conversation_list,
+            temperature,
+            speaker1,
+            speaker2,
         )
 
         print("========= output ==========")
@@ -180,7 +185,9 @@ def main(argv):
     model = Model(**cfg["model_params"])
 
     if FLAGS.gradio:
-        frontend = ui.gen_ui(model, start_prompt, exec_round_stream, cfg)
+        frontend = ui.gen_ui(
+            model, start_prompt, exec_round_stream, cfg, FLAGS["model-type"].value
+        )
         frontend.queue(concurrency_count=5, max_size=20).launch()
     else:
         cli_main(

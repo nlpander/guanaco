@@ -2,6 +2,7 @@ import json
 from typing import Callable, List
 from dataclasses import dataclass, asdict
 from src import segments
+import src.vicuna.segments as vic_segments
 from tqdm import tqdm
 
 import gradio as gr
@@ -17,7 +18,16 @@ class UIState:
         return json.dumps(asdict(self))
 
 
-def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
+def gen_ui(
+    model: Model, initial_prompt: str, exec_round: Callable, cfg, model_type: str
+):
+    segs = segments
+
+    if model_type == "vicuna":
+        segs = vic_segments
+    elif model_type == "llama":
+        segs = segments
+
     def _next_round_btn_on_click(
         initial_prompt,
         speaker1,
@@ -40,21 +50,12 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
         cfg["gpt_params"]["repeat_penalty"] = float(repeat_penalty)
 
         if additional_ctx:
-            state.prompt = segments.strip_last_speaker_add_context(
+            state.prompt = segs.strip_last_speaker_add_context(
                 state.prompt, additional_ctx
             )
 
         for i in tqdm(range(int(num_rounds))):
-            stream = exec_round(
-                model,
-                cfg,
-                state.prompt,
-                cfg["debate_params"]["ratio_keep"],
-                state.conversation_list,
-                temperature,
-                speaker1,
-                speaker2,
-            )
+            stream = exec_round(model, cfg, state.prompt, temperature)
             output = []
             for s in stream:
                 if state.conversation_list:
@@ -69,7 +70,7 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
                     gr.Textbox.update(value=""),
                 ]
 
-            prompt, conversation_list = segments.get_new_prompt(
+            prompt, conversation_list = segs.get_new_prompt(
                 output,
                 state.conversation_list,
                 n_keep=int(2 * cfg["model_params"]["n_ctx"] / 3),
@@ -77,8 +78,8 @@ def gen_ui(model: Model, initial_prompt: str, exec_round: Callable, cfg):
             )
 
             return [
-                "\n".join(state.conversation_list),
-                UIState(prompt, state.conversation_list).to_json(),
+                "\n".join(conversation_list),
+                UIState(prompt, conversation_list).to_json(),
                 gr.Textbox.update(value=""),
             ]
 
