@@ -118,7 +118,9 @@ def gen_ui(
                 next_round_btn = gr.Button("Next round")
 
             with gr.Column() as col:
-                output = gr.Textbox(label="Output", streaming=True, live=True)
+                output = gr.Textbox(
+                    label="Output", streaming=True, live=True, scroll_to_output=True
+                )
 
             next_round_btn.click(
                 fn=_next_round_btn_on_click,
