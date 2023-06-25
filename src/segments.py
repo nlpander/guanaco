@@ -1,6 +1,9 @@
 import re
-from nltk.tokenize import sent_tokenize, TreebankWordTokenizer
+from nltk.tokenize import sent_tokenize
+from transformers import LlamaTokenizer
 
+def get_llama_tokenizer(path):
+    return LlamaTokenizer.from_pretrained(path)
 
 # Determine who the next speaker is based on the prompt.
 # To do this, we determine the last mention of each speaker in the prompt and return the one that was mentioned furthest from the end.
@@ -23,59 +26,83 @@ def split_segment_speaker_midsentence(segment, speakers=["Frederich", "Ralph"]):
     return output_segment
 
 
+def get_first_speaker_segments(segments_to_keep, speakers = ['Ray', 'Warren']):
+
+    speaker1_str_ = speakers[0] + ': '
+    speaker2_str_ = speakers[1] + ': '
+
+    first_speaker = ''
+
+    k = 0 
+    while first_speaker == '':
+        spkrs = re.findall(f"({speaker1_str_})|({speaker2_str_})",segments_to_keep[k])
+        if len(spkrs) != 0:
+            for s in spkrs[0]:
+                if s != '':
+                    first_speaker = s
+        k += 1
+
+    if k != 0:
+
+        if first_speaker == speaker2_str_:
+            segments_to_keep[0] = speaker1_str_ + segments_to_keep[0]
+        elif first_speaker == speaker1_str_:
+            segments_to_keep[0] = speaker2_str_ + segments_to_keep[0]
+    
+    return segments_to_keep
+
+
 # get new prompt
-def get_new_prompt(
-    output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]
-):
-    output = "".join(list(output))
-    ### keep start of prompt
-    start_prompt = "\n".join(output.split("\n")[0:2])
+def get_new_prompt(prefix, output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]):  
+    
+    tokenizer = get_llama_tokenizer(path='/home/taraful/llama.cpp/models/')
+    output = tokenizer.convert_tokens_to_string(list(output))
 
     ### sometimes we get a leading whitespace in the string - remove this
-    start_prompt = re.sub("^\s*", "", start_prompt)
+    start_prompt = prefix
     start_prompt += "\n"
 
-    N0 = len(TreebankWordTokenizer().tokenize(start_prompt))
+    N0 = len(tokenizer.tokenize(start_prompt))
 
     ### split the rest of prompt sentence by sentences counting the overall size of the context
     ### add sentences from the end backwards
     ### till the n_keep limit has been reached. In llama.cpp this is set to n_ctx / 2
 
     total_len = N0
-    k = 0
 
-    next_output = "\n".join(output.split("\n")[2:])
-
-    segments = sent_tokenize(next_output)[::-1]
+    ### reverse sentences
+    segments = sent_tokenize(output)[::-1]
     segments_to_keep = []
     all_segments = []
-
+    
     for i in range(0, len(segments)):
         segment = segments[i]
-        N = len(TreebankWordTokenizer().tokenize(segment))
+        N = len(tokenizer.tokenize(segment))
         total_len += N
 
-        if total_len < n_keep:
+        if total_len < n_keep and len(re.findall("[.!?]", segment)) != 0:
             segments_to_keep.append(segment)
 
         all_segments.append(segment)
 
     segments_to_keep = segments_to_keep[::-1]
     all_segments = all_segments[::-1]
-
+    
+    ### after triming the previous output for the new input context we need to add the first speaker 
+    segments_to_keep = get_first_speaker_segments(segments_to_keep, speakers)
+    
     ### construct the new prompt with the start prompt and the segments added
-
     new_prompt = start_prompt
     # conversation = ''
-
+    
     for j in range(0, len(all_segments)):
-        segment = all_segments[j].replace("\n", "")
-
+        segment = all_segments[j]
+        
         ### append full sentences to the conversation list and the new prompt to inject
         if len(re.findall("[.!?]", segment)) != 0:
             # if speaker contained in segment split the segment
             segment = split_segment_speaker_midsentence(segment, speakers)
-
+            
             if segment not in conversation_list:
                 conversation_list.append(segment)
 

@@ -1,7 +1,6 @@
 from src import ui, segments, temperature
 import src.vicuna.segments as vic_segments
 
-
 from pyllamacpp.model import Model
 from tqdm import tqdm
 import datetime as dt
@@ -33,6 +32,7 @@ flags.DEFINE_string(
     "none",
     "The style of decay or randomness you desire for the conversation",
 )
+flags.DEFINE_string("prefix", None, "The initial prompt to guide the conversation")
 flags.DEFINE_float(
     "max-temp-randomness", 0.0, "Max temperature randomness from baseline"
 )
@@ -56,7 +56,8 @@ def exec_round(
 
     if FLAGS["model-type"].value == "llama":
         prompt, conversation_list = segments.get_new_prompt(
-            output,
+            cfg['prefix'],
+            prompt + ''.join(output),
             conversation_list,
             n_keep=int(cfg["model_params"]["n_ctx"] * ratio_keep),
             speakers=[speaker1, speaker2],
