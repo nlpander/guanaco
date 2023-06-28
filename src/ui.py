@@ -45,10 +45,13 @@ def gen_ui(
     ):
         state = UIState(**json.loads(state))
         
+        #print(prefix)
+        #print(initial_prompt)
+
         if state.rounds_elapsed == 0:
-          state.prompt = prefix + '\n' + state.prompt or initial_prompt
+          state.prompt = prefix + '\n' + initial_prompt
         else:
-          state.prompt = state.prompt or initial_prompt
+          state.prompt = state.prompt
 
         #state.prompt = state.prompt or initial_prompt
 
@@ -99,9 +102,14 @@ def gen_ui(
 
             state.rounds_elapsed += 1
 
+            print(state.prompt)
+            print('###########################')
+            print(state.rounds_elapsed)
+            print('###########################')        
+
             return [
                 "\n".join(conversation_list),
-                UIState(prompt, conversation_list,state.rounds_elapsed).to_json(),
+                UIState(state.prompt, state.conversation_list,state.rounds_elapsed).to_json(),
                 gr.Textbox.update(value=""),
             ]
 
@@ -117,8 +125,11 @@ def gen_ui(
                 speaker2 = gr.Textbox(
                     label="Speaker 2", value=cfg["debate_params"]["speaker2_fullname"]
                 )
+
+                prefix_box = gr.Textbox(label="Prefix", value=prefix)
+
                 initial_prompt = gr.Textbox(
-                    label="Prompt", value=cfg["debate_params"]["initial_prompt"]
+                    label="Initial Prompt", value=cfg["debate_params"]["initial_prompt"]
                 )
 
                 with gr.Row() as row:
@@ -146,7 +157,7 @@ def gen_ui(
                 fn=_next_round_btn_on_click,
                 inputs=[
                     initial_prompt,
-                    prefix,
+                    prefix_box,
                     speaker1,
                     speaker2,
                     temperature,
