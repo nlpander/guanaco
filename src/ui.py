@@ -13,13 +13,14 @@ from pyllamacpp.model import Model
 class UIState:
     prompt: str
     conversation_list: List[str]
+    rounds_elapsed: int
 
     def to_json(self):
         return json.dumps(asdict(self))
 
 
 def gen_ui(
-    model: Model, initial_prompt: str, exec_round: Callable, cfg, model_type: str
+    model: Model, initial_prompt: str, prefix: str, exec_round: Callable, cfg, model_type: str
 ):
     segs = segments
 
@@ -30,6 +31,7 @@ def gen_ui(
 
     def _next_round_btn_on_click(
         initial_prompt,
+        prefix,
         speaker1,
         speaker2,
         temperature,
@@ -42,7 +44,13 @@ def gen_ui(
         repeat_penalty,
     ):
         state = UIState(**json.loads(state))
-        state.prompt = state.prompt or initial_prompt
+        
+        if state.rounds_elapsed == 0:
+          state.prompt = prefix + '\n' + state.prompt or initial_prompt
+        else:
+          state.prompt = state.prompt or initial_prompt
+
+        #state.prompt = state.prompt or initial_prompt
 
         cfg["gpt_params"]["top_k"] = int(top_k)
         cfg["gpt_params"]["top_p"] = float(top_p)
@@ -53,8 +61,9 @@ def gen_ui(
             state.prompt = segs.strip_last_speaker_add_context(
                 state.prompt, additional_ctx
             )
-
+        
         for i in tqdm(range(int(num_rounds))):
+
             stream = exec_round(model, cfg, state.prompt, temperature)
             output = []
             for s in stream:
@@ -62,7 +71,7 @@ def gen_ui(
                     state.conversation_list[-1] += s
                 else:
                     state.conversation_list = [s]
-                state = UIState(state.prompt, state.conversation_list)
+                state = UIState(state.prompt, state.conversation_list, state.rounds_elapsed)
                 output += [s]
                 yield [
                     "\n".join(state.conversation_list),
@@ -70,21 +79,34 @@ def gen_ui(
                     gr.Textbox.update(value=""),
                 ]
 
-            prompt, conversation_list = segs.get_new_prompt(
-                output,
-                state.conversation_list,
-                n_keep=int(2 * cfg["model_params"]["n_ctx"] / 3),
-                speakers=[speaker1, speaker2],
-            )
+            if model_type == 'llama':
+                prompt, conversation_list = segs.get_new_prompt(
+                    prefix,
+                    state.prompt + ''.join(output),
+                    state.conversation_list,
+                    cfg['debate_params']['tokenizer_path'],
+                    n_keep=int(2 * cfg["model_params"]["n_ctx"] / 3),
+                    speakers=[speaker1, speaker2],
+                )                
+            
+            elif model_type == 'vicuna':
+                prompt, conversation_list = segs.get_new_prompt(
+                    output,
+                    state.conversation_list,
+                    n_keep=int(2 * cfg["model_params"]["n_ctx"] / 3),
+                    speakers=[speaker1, speaker2],
+                )
+
+            state.rounds_elapsed += 1
 
             return [
                 "\n".join(conversation_list),
-                UIState(prompt, conversation_list).to_json(),
+                UIState(prompt, conversation_list,state.rounds_elapsed).to_json(),
                 gr.Textbox.update(value=""),
             ]
 
     with gr.Blocks() as ui:
-        initial_state = UIState(prompt=None, conversation_list=[])
+        initial_state = UIState(prompt=None, conversation_list=[], rounds_elapsed=0)
         state = gr.State(initial_state.to_json())
 
         with gr.Row() as row:
@@ -124,6 +146,7 @@ def gen_ui(
                 fn=_next_round_btn_on_click,
                 inputs=[
                     initial_prompt,
+                    prefix,
                     speaker1,
                     speaker2,
                     temperature,

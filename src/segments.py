@@ -11,6 +11,9 @@ def get_next_speaker(prompt, speakers=["Frederich", "Ralph"]):
     mentions = {s: prompt.rfind(f"{s}:") for s in speakers}
     return min(mentions, key=mentions.get)
 
+# sometimes markdown is generated - remove this 
+def remove_markdown(output_text):
+    return re.sub(r'\\[a-z]+\{[^\}]*\}|\$[^\$]*\$|\\\w+', '', output_text)
 
 # split the segment if a speaker section begins mid-sentence
 def split_segment_speaker_midsentence(segment, speakers=["Frederich", "Ralph"]):
@@ -24,7 +27,6 @@ def split_segment_speaker_midsentence(segment, speakers=["Frederich", "Ralph"]):
             output_segment = segment
 
     return output_segment
-
 
 def get_first_speaker_segments(segments_to_keep, speakers = ['Ray', 'Warren']):
 
@@ -51,14 +53,15 @@ def get_first_speaker_segments(segments_to_keep, speakers = ['Ray', 'Warren']):
     
     return segments_to_keep
 
-
 # get new prompt
-def get_new_prompt(prefix, output, conversation_list, n_keep=150, speakers=["Frederich", "Ralph"]):  
+def get_new_prompt(prefix, output, conversation_list, tokenizer_path, n_keep=150, speakers=["Frederich", "Ralph"]):  
     
-    tokenizer = get_llama_tokenizer(path='/home/taraful/llama.cpp/models/')
+    tokenizer = get_llama_tokenizer(tokenizer_path)
     output = tokenizer.convert_tokens_to_string(list(output))
 
-    ### sometimes we get a leading whitespace in the string - remove this
+    ### remove any markdown 
+    output = remove_markdown(output)
+
     start_prompt = prefix
     start_prompt += "\n"
 
@@ -114,7 +117,6 @@ def get_new_prompt(prefix, output, conversation_list, n_keep=150, speakers=["Fre
     new_prompt += "\n" + next_speaker + ": "
 
     return new_prompt, conversation_list
-
 
 def strip_last_speaker_add_context(prompt, additional_ctx):
     segments = prompt.split("\n")

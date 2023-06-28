@@ -56,9 +56,10 @@ def exec_round(
 
     if FLAGS["model-type"].value == "llama":
         prompt, conversation_list = segments.get_new_prompt(
-            cfg['prefix'],
+            cfg['debate_params']['prefix'],
             prompt + ''.join(output),
             conversation_list,
+            cfg['debate_params']['tokenizer_path'],
             n_keep=int(cfg["model_params"]["n_ctx"] * ratio_keep),
             speakers=[speaker1, speaker2],
         )
@@ -168,6 +169,7 @@ def main(argv):
     period = FLAGS["period"].value
     ratio_keep = cfg["debate_params"]["ratio_keep"]
     start_prompt = cfg["debate_params"]["initial_prompt"]
+    prefix = cfg["debate_params"]["prefix"]
     speaker1 = cfg["debate_params"]["speaker1_fullname"].split(" ")[0]
     speaker2 = cfg["debate_params"]["speaker2_fullname"].split(" ")[0]
 
@@ -187,7 +189,7 @@ def main(argv):
 
     if FLAGS.gradio:
         frontend = ui.gen_ui(
-            model, start_prompt, exec_round_stream, cfg, FLAGS["model-type"].value
+            model, start_prompt, prefix, exec_round_stream, cfg, FLAGS["model-type"].value
         )
         frontend.queue(concurrency_count=5, max_size=20).launch()
     else:
