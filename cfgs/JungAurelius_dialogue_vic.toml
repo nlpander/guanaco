@@ -9,12 +9,12 @@ n_threads = 16
 
 [model_params]
 model_path = '/home/taraful/llama.cpp/models/Vicuna/ggml-model-q4_0.bin'
-n_ctx = 1000
+n_ctx = 400
 
 [gpt_params]
-n_predict = 512
+n_predict = 256
 temp = 0.7
 top_k = 100
 top_p = 0.95
-repeat_last_n = 512
+repeat_last_n = 256
 repeat_penalty = 1.2
