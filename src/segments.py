@@ -1,4 +1,5 @@
 import re
+import numpy as np
 from nltk.tokenize import sent_tokenize
 from transformers import LlamaTokenizer
 
@@ -36,7 +37,7 @@ def get_first_speaker_segments(segments_to_keep, speakers = ['Ray', 'Warren']):
     first_speaker = ''
 
     k = 0 
-    while first_speaker == '':
+    while first_speaker == '' and k < len(segments_to_keep):
         spkrs = re.findall(f"({speaker1_str_})|({speaker2_str_})",segments_to_keep[k])
         if len(spkrs) != 0:
             for s in spkrs[0]:
@@ -50,7 +51,12 @@ def get_first_speaker_segments(segments_to_keep, speakers = ['Ray', 'Warren']):
             segments_to_keep[0] = speaker1_str_ + segments_to_keep[0]
         elif first_speaker == speaker1_str_:
             segments_to_keep[0] = speaker2_str_ + segments_to_keep[0]
-    
+        elif first_speaker == '':
+            if np.random.rand() > 0.5:
+                segments_to_keep[0] = speaker1_str_ + segments_to_keep[0]
+            else:
+                segments_to_keep[0] = speaker2_str_ + segments_to_keep[0]
+     
     return segments_to_keep
 
 # get new prompt
