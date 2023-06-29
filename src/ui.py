@@ -107,7 +107,7 @@ def gen_ui(
             print(state.rounds_elapsed)
             print('###########################')        
 
-            return [
+            yield [
                 "\n".join(conversation_list),
                 UIState(state.prompt, state.conversation_list,state.rounds_elapsed).to_json(),
                 gr.Textbox.update(value=""),
